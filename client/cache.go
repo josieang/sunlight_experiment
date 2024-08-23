@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
+	"strings"
 
 	ct "github.com/google/certificate-transparency-go"
 	"github.com/google/certificate-transparency-go/tls"
@@ -146,6 +148,13 @@ func (c *Client) GetEntryTile(ctx context.Context, tileIndex uint64, logSize uin
 		return nil, err
 	}
 
+	f, err := os.Create(strings.ReplaceAll(DataTileAPIFragment(tileIndex, logSize)[1:], "/", "-"))
+	if err != nil {
+		return nil, fmt.Errorf("os.Create %w", err)
+	}
+	if _, err := f.Write(b); err != nil {
+		return nil, fmt.Errorf("writing data tile to file %w", err)
+	}
 	t, err := c.NewDataTile(tileIndex, b)
 	if err != nil {
 		return nil, fmt.Errorf("NewEntryTile: %w", err)
@@ -172,6 +181,13 @@ func (c *Client) GetIssuer(fingerprint [sha256.Size]byte) ([]byte, error) {
 	cert, err := io.ReadAll(resp.Body)
 	if err != nil {
 		return nil, err
+	}
+	f, err := os.Create("issuer-" + fingerprintHex)
+	if err != nil {
+		return nil, fmt.Errorf("os.Create %w", err)
+	}
+	if _, err := f.Write(cert); err != nil {
+		return nil, fmt.Errorf("writing issuer to file %w", err)
 	}
 	c.issuers[fingerprintHex] = cert
 	return cert, nil
@@ -238,6 +254,11 @@ type DataTileEntry struct {
 	CertificateChain []byte
 }
 
+// The fingerprints need to be unmarshaled into their own struct
+type FingerprintStruct struct {
+	Fingerprint [][sha256.Size]byte `tls:"minlen:0,maxlen:65535"`
+}
+
 // NewDataTile reads a decompressed entry tile, parsing it into a DataTile.
 // TODO: make this function generic we may want to support tiled logs containing other kinds of data
 // in the future.
@@ -264,10 +285,12 @@ func (c *Client) NewDataTile(width uint64, contents []byte) (*DataTile, error) {
 		default:
 			return nil, fmt.Errorf("unsupported entry type: %v", entry.EntryType)
 		}
-		remaining, err = tls.Unmarshal(remaining, &leaf.Fingerprint)
+		var fpt FingerprintStruct
+		remaining, err = tls.Unmarshal(remaining, &fpt)
 		if err != nil {
 			return nil, fmt.Errorf("unmarshaling fingerprints: %w", err)
 		}
+		leaf.Fingerprint = fpt.Fingerprint
 		for _, fingerprint := range leaf.Fingerprint {
 			cert, err := c.GetIssuer(fingerprint)
 			if err != nil {

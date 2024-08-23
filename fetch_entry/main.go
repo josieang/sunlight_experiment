@@ -27,10 +27,9 @@ func main() {
 		panic(err)
 	}
 
-	tile100, err := c.GetEntryTile(ctx, 100, uint64(cpt.Size))
+	_, err = c.GetEntryTile(ctx, 1, uint64(cpt.Size))
 	if err != nil {
 		panic(err)
 	}
-	fmt.Println(tile100)
 
 }
