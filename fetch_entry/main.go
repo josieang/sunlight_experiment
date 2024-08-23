@@ -10,8 +10,7 @@ import (
 )
 
 var (
-	logURL  = flag.String("log_url", "https://rome2025h2.fly.storage.tigris.dev", "log url without trailing slash")
-	logName = flag.String("log_name", "rome_2025h2", "")
+	logURL = flag.String("log_url", "https://rome2025h2.fly.storage.tigris.dev", "log url without trailing slash")
 )
 
 func main() {
@@ -22,7 +21,7 @@ func main() {
 		panic(err)
 	}
 	fmt.Printf("checkpoint size: %d\n", cpt.Size)
-	c, err := client.NewClient(httpClient, *logURL, *logName)
+	c, err := client.NewClient(httpClient, *logURL)
 	if err != nil {
 		panic(err)
 	}

@@ -37,8 +37,6 @@ type Client struct {
 	issuers    map[string][]byte // Keyed by hex-encoded fingerprint.
 	httpClient *http.Client
 	url        string // The URL prefix to fetch tiles from. No trailing slash.
-	logName    string // For metrics.
-	logSize    uint64
 }
 
 // TileKey is used to key the tiles map in the Client.
@@ -48,7 +46,7 @@ type TileKey struct {
 }
 
 // NewClient allocates a new Client.
-func NewClient(client *http.Client, url string, logName string) (*Client, error) {
+func NewClient(client *http.Client, url string) (*Client, error) {
 	if client == nil {
 		return nil, fmt.Errorf("HTTP client is nil")
 
@@ -59,7 +57,6 @@ func NewClient(client *http.Client, url string, logName string) (*Client, error)
 		tiles:      make(map[TileKey]*Tile),
 		httpClient: client,
 		url:        url,
-		logName:    logName,
 	}, nil
 }
 
@@ -69,7 +66,7 @@ func (c *Client) GetTile(ctx context.Context, tileLevel, tileIndex, logSize uint
 	if t, ok := c.tiles[TileKey{tileLevel, tileIndex}]; ok && t.Width() >= wantWidth {
 		return t, nil
 	}
-	url := c.url + TileAPIFragment(tileLevel, tileIndex, c.logSize)
+	url := c.url + TileAPIFragment(tileLevel, tileIndex, logSize)
 	req, err := http.NewRequestWithContext(ctx, "GET", url, nil)
 	if err != nil {
 		return nil, fmt.Errorf("http.NewRequestWithContext(%s): %w", url, err)

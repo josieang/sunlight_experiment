@@ -11,10 +11,10 @@ import (
 )
 
 var (
-	treeLevel = flag.Int("tree_level", 24, "tree level")
+	treeLevel = flag.Int("tree_level", 9, "tree level")
 	treeIndex = flag.Int("tree_index", 0, "tree index")
 	printTile = flag.Bool("print_tile", true, "whether to print the tile")
-	logURL    = flag.String("log_url", "https://twig.ct.letsencrypt.org/2024h1", "log url without trailing slash")
+	logURL    = flag.String("log_url", "https://rome2025h2.fly.storage.tigris.dev", "log url without trailing slash")
 )
 
 func main() {
@@ -25,14 +25,17 @@ func main() {
 		panic(err)
 	}
 	fmt.Printf("checkpoint size: %d\n", cpt.Size)
-	c := client.NewCache(httpClient, *logURL, cpt.Size)
-	h, err := c.GetHash(ctx, *treeLevel, *treeIndex)
+	c, err := client.NewClient(httpClient, *logURL)
+	if err != nil {
+		panic(err)
+	}
+	h, err := c.GetHash(ctx, uint64(*treeLevel), uint64(*treeIndex), uint64(cpt.Size))
 	if err != nil {
 		panic(err)
 	}
 	if *printTile {
 		tileLevel, tileIndex, _, _ := client.TreeCoordsToTileNodeAddress(uint64(*treeLevel), uint64(*treeIndex))
-		t, err := c.GetTile(ctx, int(tileLevel), int(tileIndex))
+		t, err := c.GetTile(ctx, uint64(tileLevel), uint64(tileIndex), uint64(cpt.Size))
 		if err != nil {
 			panic(err)
 		}

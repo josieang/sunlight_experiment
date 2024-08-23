@@ -12,9 +12,9 @@ import (
 )
 
 var (
-	logURL  = flag.String("log_url", "https://twig.ct.letsencrypt.org/2024h1", "log operator url without trailing slash")
-	oldSize = flag.Int("old_size", 586558493, "old size")
-	oldHash = flag.String("old_hash", "Xi1B8o68I2jTllUVecz8Mjf7v1pObFTvrPkwR/9WZVQ=", "old size")
+	logURL  = flag.String("log_url", "https://rome2025h2.fly.storage.tigris.dev", "log operator url without trailing slash")
+	oldSize = flag.Int("old_size", 117843, "old size")
+	oldHash = flag.String("old_hash", "kS5okTrSlw508uZJciXj6v2UaI2zq1bAJGiQmQVIn1E=", "old size")
 )
 
 func main() {
@@ -36,10 +36,13 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
-	cache := client.NewCache(httpClient, *logURL, cpt.Size)
+	cache, err := client.NewClient(httpClient, *logURL)
+	if err != nil {
+		panic(err)
+	}
 	consistencyProof := make([][]byte, len(nodes.IDs))
 	for i, id := range nodes.IDs {
-		h, err := cache.GetHash(ctx, int(id.Level), int(id.Index))
+		h, err := cache.GetHash(ctx, uint64(id.Level), uint64(id.Index), uint64(cpt.Size))
 		if err != nil {
 			panic(err)
 		}
