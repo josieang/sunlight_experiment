@@ -103,7 +103,7 @@ func (c *Client) GetHash(ctx context.Context, treeLevel, treeIndex uint64, logSi
 	}
 	h, ok := tile.GetHash(nodeLevel, nodeIndex)
 	if !ok {
-		return [sha256.Size]byte{}, fmt.Errorf("hash not found in tile")
+		return [sha256.Size]byte{}, fmt.Errorf("hash not found in tile nodelevel/nodeindex: %d/%d", nodeLevel, nodeIndex)
 	}
 	return h, nil
 }
@@ -120,7 +120,12 @@ func (c *Client) GetEntries(ctx context.Context, startEntryIndex uint64, endEntr
 		}
 		result = append(result, t.Entries...)
 	}
-	return &ct.GetEntriesResponse{Entries: result[:endEntryIndex-startEntryIndex+1]}, nil
+	// startEntryIndex and endEntryIndex may not start/end at the end of a
+	// tile, and we are fetching whole tiles (except potentially the last
+	// one.
+	result = result[startEntryIndex%FullTileWidth:]
+	result = result[:(endEntryIndex - startEntryIndex + 1)] // Range is inclusive.
+	return &ct.GetEntriesResponse{Entries: result}, nil
 }
 
 // GetEntryTile fetches a tile of entries from the log or from the cache if it has already been fetched.
